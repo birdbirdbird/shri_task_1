@@ -1,4 +1,4 @@
-const { exec } = require('child_process')
+const { exec, execFile } = require('child_process')
 
 module.exports = {
   get: {
@@ -71,15 +71,11 @@ module.exports = {
     blob (req, res, next) {
       const { repositoryId, commitHash } = req.params
       const pathToFile = req.params['0']
-      exec(`git show ${commitHash}:${pathToFile}`, {
+      const log = execFile('git', ['show', `${commitHash}:${pathToFile}`], {
         cwd: `${process.argv[2]}/${repositoryId}`
-      }, (err, out) => {
-        if (err) {
-          next(err)
-        } else {
-          res.json({ data: out })
-        }
       })
+      log.stdout.on('data', data => res.send({ data: data })) // не успела доделать :(
+      log.on('close', code => console.log('closed'))
     }
   },
   delete: {
